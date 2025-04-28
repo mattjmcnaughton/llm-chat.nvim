@@ -5,7 +5,7 @@ services:
     stdin_open: true
     tty: true
     user: "1000:1000"
-    hostname: code-worksapce
+    hostname: code-workspace
     volumes:
       - .:/workspace
     working_dir: /workspace
