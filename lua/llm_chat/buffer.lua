@@ -1,0 +1,175 @@
+-- lua/llm_chat/buffer.lua
+local M = {}
+
+-- Store active chat buffers
+M.active_buffers = {}
+
+function M.setup(config)
+  M.config = config
+end
+
+-- Create a new chat buffer
+function M.create_chat_buffer()
+  -- Create a new buffer
+  local buf = vim.api.nvim_create_buf(false, true)
+
+  -- Set buffer options
+  vim.api.nvim_buf_set_option(buf, 'buftype', 'nofile')
+  vim.api.nvim_buf_set_option(buf, 'bufhidden', 'hide')
+  vim.api.nvim_buf_set_option(buf, 'swapfile', false)
+  vim.api.nvim_buf_set_option(buf, 'filetype', M.config.filetype)
+
+  -- Open the buffer in a new window
+  vim.api.nvim_command('vsplit')
+  local win = vim.api.nvim_get_current_win()
+  vim.api.nvim_win_set_buf(win, buf)
+
+  -- Initialize chat
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+    "# LLM Chat",
+    "",
+    "Type your message and press " .. M.config.send .. " to send.",
+    ""
+  })
+
+  -- Set up buffer-local keymaps
+  if M.config.send then
+    vim.api.nvim_buf_set_keymap(buf, 'n', M.config.send,
+      [[<cmd>lua require('llm_chat').send_message()<CR>]],
+      { noremap = true, silent = true, desc = 'Send message to LLM' })
+
+    vim.api.nvim_buf_set_keymap(buf, 'i', M.config.send,
+      [[<Esc><cmd>lua require('llm_chat').send_message()<CR>]],
+      { noremap = true, silent = true, desc = 'Send message to LLM' })
+  end
+
+  if M.config.new_chat then
+    vim.api.nvim_buf_set_keymap(buf, 'n', M.config.new_chat,
+      [[<cmd>lua require('llm_chat').new_chat()<CR>]],
+      { noremap = true, silent = true, desc = 'Start new LLM chat' })
+  end
+
+  -- Store buffer data
+  M.active_buffers[buf] = {
+    messages = {},
+    model = "gpt-4", -- Hardcoded for now
+  }
+
+  return buf
+end
+
+-- Add user message to buffer
+function M.add_user_message(buf, content)
+  -- Only proceed if this is one of our chat buffers
+  if not M.active_buffers[buf] then
+    return
+  end
+
+  -- Add message to buffer
+  local lines = vim.split(content, "\n")
+  local formatted_lines = {M.config.user_prefix}
+
+  for _, line in ipairs(lines) do
+    table.insert(formatted_lines, line)
+  end
+
+  table.insert(formatted_lines, "")
+  vim.api.nvim_buf_set_lines(buf, -1, -1, false, formatted_lines)
+
+  -- Add to message history
+  table.insert(M.active_buffers[buf].messages, {
+    role = "user",
+    content = content
+  })
+end
+
+-- Add assistant message to buffer
+function M.add_assistant_message(buf, content)
+  -- Only proceed if this is one of our chat buffers
+  if not M.active_buffers[buf] then
+    return
+  end
+
+  -- Add message to buffer
+  local lines = vim.split(content, "\n")
+  local formatted_lines = {M.config.assistant_prefix}
+
+  for _, line in ipairs(lines) do
+    table.insert(formatted_lines, line)
+  end
+
+  table.insert(formatted_lines, "")
+  vim.api.nvim_buf_set_lines(buf, -1, -1, false, formatted_lines)
+
+  -- Add to message history
+  table.insert(M.active_buffers[buf].messages, {
+    role = "assistant",
+    content = content
+  })
+end
+
+-- Get chat data for a buffer
+function M.get_chat_data(buf)
+  return M.active_buffers[buf]
+end
+
+-- Get current message (typed but not sent)
+function M.get_current_message()
+  local buf = vim.api.nvim_get_current_buf()
+
+  -- Find the last user message marker
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local start_line = -1
+
+  for i = #lines, 1, -1 do
+    if lines[i] == M.config.user_prefix:gsub("%s+$", "") then
+      start_line = i
+      break
+    end
+  end
+
+  if start_line == -1 then
+    return ""
+  end
+
+  -- Extract the message content
+  local message_lines = {}
+  for i = start_line + 1, #lines do
+    if lines[i] ~= "" then
+      table.insert(message_lines, lines[i])
+    else
+      break
+    end
+  end
+
+  return table.concat(message_lines, "\n")
+end
+
+-- Clear the input area
+function M.clear_input(buf)
+  -- Find where to clear
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  local start_line = -1
+
+  for i = #lines, 1, -1 do
+    if lines[i] == M.config.user_prefix:gsub("%s+$", "") then
+      start_line = i + 1
+      break
+    end
+  end
+
+  if start_line ~= -1 and start_line <= #lines then
+    vim.api.nvim_buf_set_lines(buf, start_line, #lines, false, {""})
+  end
+end
+
+-- Prepare for user input
+function M.prompt_user(buf)
+  vim.api.nvim_buf_set_lines(buf, -1, -1, false, {M.config.user_prefix, ""})
+
+  -- Move cursor to input position
+  vim.api.nvim_win_set_cursor(0, {vim.api.nvim_buf_line_count(buf), 0})
+  vim.cmd("startinsert")
+end
+
+return M
