@@ -154,7 +154,7 @@ function M.send_message()
   buffer.clear_input(buf)
 
   -- Update status line
-  client.update_status(buf, "Waiting for response... (0s elapsed)")
+  client.update_status("Waiting for response... (0s elapsed)")
 
   -- Track timing for status updates
   local start_time = os.time()
@@ -167,7 +167,7 @@ function M.send_message()
       local remaining = M.config.litellm.timeout - elapsed
 
       if remaining >= 0 then
-        client.update_status(buf, string.format(
+        client.update_status(string.format(
           "Waiting... (%ds elapsed, %ds until timeout)",
           elapsed, remaining
         ))
@@ -190,13 +190,13 @@ function M.send_message()
       logger.log_assistant_message(chat_data, response.content)
 
       -- Add timing information
-      client.update_status(buf, string.format(
+      client.update_status(string.format(
         "Response received in %d seconds",
         response.elapsed_time
       ))
     else
       -- Handle error
-      client.update_status(buf, string.format(
+      client.update_status(string.format(
         "Error: %s (after %d seconds)",
         response.error, response.elapsed_time
       ))

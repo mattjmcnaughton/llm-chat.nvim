@@ -169,9 +169,8 @@ function M.get_models(callback)
 end
 
 -- Helper function to update chat with timing information
-function M.update_status(buf, message)
-  local status_line = "Status: " .. message
-  vim.api.nvim_buf_set_lines(buf, -1, -1, false, {status_line})
+function M.update_status(message)
+  vim.notify("llm-chat.nvim status: " .. message, vim.log.levels.INFO)
 end
 
 return M
