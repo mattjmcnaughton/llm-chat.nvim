@@ -27,7 +27,7 @@ function M.create_chat_buffer()
 
   -- Initialize chat
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
-    "# LLM Chat",
+    "# llm-chat",
     "",
     "Type your message and press " .. M.keymaps_config.send .. " to send.",
     ""
@@ -53,7 +53,7 @@ function M.create_chat_buffer()
   -- Store buffer data
   M.active_buffers[buf] = {
     messages = {},
-    model = "gpt-4", -- Hardcoded for now
+    model = "anthropic-claude-3-7-sonnet", -- Hardcoded for now
   }
 
   return buf
@@ -114,33 +114,36 @@ function M.get_chat_data(buf)
   return M.active_buffers[buf]
 end
 
--- Get current message (typed but not sent)
+-- Get current message for sending...
 function M.get_current_message()
   local buf = vim.api.nvim_get_current_buf()
 
-  -- Find the last user message marker
+  -- Get all buffer lines
   local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-  local start_line = -1
 
+  -- Find the last user message marker
+  local start_line = -1
   for i = #lines, 1, -1 do
-    if lines[i] == M.buffer_config.user_prefix:gsub("%s+$", "") then
+    if string.find(lines[i], "^" .. M.buffer_config.user_prefix:gsub("%s+$", "")) then
       start_line = i
       break
     end
   end
 
-  if start_line == -1 then
+  if start_line == -1 or start_line >= #lines then
     return ""
   end
 
-  -- Extract the message content
+  -- Extract the message content (all lines after the prefix until the end or an empty line)
   local message_lines = {}
   for i = start_line + 1, #lines do
     if lines[i] ~= "" then
       table.insert(message_lines, lines[i])
-    else
-      break
     end
+  end
+
+  if #message_lines == 0 then
+    return ""
   end
 
   return table.concat(message_lines, "\n")
