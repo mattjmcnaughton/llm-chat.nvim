@@ -61,31 +61,6 @@ function M.create_chat_buffer(model_name, persona_name, buf_id)
   return buf
 end
 
--- Add user message to buffer
-function M.add_user_message(buf, content)
-  -- Only proceed if this is one of our chat buffers
-  if not M.active_buffers[buf] then
-    return
-  end
-
-  -- Add message to buffer
-  local lines = vim.split(content, "\n")
-  local formatted_lines = {M.buffer_config.user_prefix}
-
-  for _, line in ipairs(lines) do
-    table.insert(formatted_lines, line)
-  end
-
-  table.insert(formatted_lines, "")
-  vim.api.nvim_buf_set_lines(buf, -1, -1, false, formatted_lines)
-
-  -- Add to message history
-  table.insert(M.active_buffers[buf].messages, {
-    role = "user",
-    content = content
-  })
-end
-
 -- Add assistant message to buffer
 function M.add_assistant_message(buf, content)
   -- Only proceed if this is one of our chat buffers
@@ -117,7 +92,8 @@ function M.get_chat_data(buf)
 end
 
 -- Get current message for sending...
-function M.get_current_message()
+-- Get current message for sending and the line numbers where it's located
+function M.get_current_message_with_lines()
   local buf = vim.api.nvim_get_current_buf()
 
   -- Get all buffer lines
@@ -133,22 +109,36 @@ function M.get_current_message()
   end
 
   if start_line == -1 or start_line >= #lines then
-    return ""
+    return "", nil, nil
   end
 
   -- Extract the message content (all lines after the prefix until the end or an empty line)
   local message_lines = {}
+  local end_line = #lines
+
   for i = start_line + 1, #lines do
     if lines[i] ~= "" then
       table.insert(message_lines, lines[i])
+    else
+      end_line = i - 1
+      break
     end
   end
 
   if #message_lines == 0 then
-    return ""
+    return "", nil, nil
   end
 
-  return table.concat(message_lines, "\n")
+  return table.concat(message_lines, "\n"), start_line, end_line
+end
+
+-- Format the existing user message (add a blank line after it)
+function M.format_user_message(buf, start_line, end_line)
+  -- Add a blank line after the message if there isn't one already
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  if end_line < #lines and lines[end_line + 1] ~= "" then
+    vim.api.nvim_buf_set_lines(buf, end_line + 1, end_line + 1, false, {""})
+  end
 end
 
 -- Clear the input area

@@ -126,7 +126,6 @@ function M.get_personas()
   return persona.get_all_personas()
 end
 
--- Send the current message
 function M.send_message()
   local buf = vim.api.nvim_get_current_buf()
   local chat_data = buffer.get_chat_data(buf)
@@ -137,21 +136,26 @@ function M.send_message()
   end
 
   -- Get the current message
-  local message = buffer.get_current_message()
+  local message, start_line, end_line = buffer.get_current_message_with_lines()
 
   if message == "" then
     vim.notify("No message to send", vim.log.levels.WARN)
     return
   end
 
-  -- Clear input area
-  buffer.clear_input(buf)
+  -- Instead of re-adding the message, just format the existing one
+  buffer.format_user_message(buf, start_line, end_line)
 
-  -- Add to buffer display
-  buffer.add_user_message(buf, message)
+  -- Add to message history
+  table.insert(chat_data.messages, {
+    role = "user",
+    content = message
+  })
+
+  -- Log the message
   logger.log_user_message(chat_data, message)
 
-  -- Update status line
+  -- Update status notification
   client.update_status("Waiting for response... (0s elapsed)")
 
   -- Track timing for status updates
