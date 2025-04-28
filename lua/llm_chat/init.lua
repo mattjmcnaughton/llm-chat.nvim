@@ -6,6 +6,7 @@ local buffer = require('llm_chat.buffer')
 local client = require('llm_chat.client')
 local persona = require('llm_chat.persona')
 local model = require('llm_chat.model')
+local logger = require('llm_chat.logger')
 
 -- Default configuration
 M.config = {
@@ -35,6 +36,11 @@ M.config = {
     filetype = "markdown",
     user_prefix = "User: ",
     assistant_prefix = "Assistant: ",
+  },
+
+  logger = {
+    enabled = true,
+    directory = vim.fn.stdpath('data') .. '/llm_chat_logs',
   },
 
   -- Keymaps for chat buffer
@@ -93,6 +99,8 @@ function M.new_chat(model_name, persona_name)
   chat_data.persona = persona_name
   table.insert(chat_data.messages, system_message)
 
+  logger.log_new_chat(chat_data)
+
   -- Update buffer title to show persona
   local title = "# llm-chat"
     if model_name then
@@ -138,6 +146,7 @@ function M.send_message()
 
   -- Add to buffer display
   buffer.add_user_message(buf, message)
+  logger.log_user_message(chat_data, message)
 
   -- Clear input area
   buffer.clear_input(buf)
@@ -176,6 +185,7 @@ function M.send_message()
     if response.success then
       -- Add assistant response to buffer
       buffer.add_assistant_message(buf, response.content)
+      logger.log_assistant_message(chat_data, response.content)
 
       -- Add timing information
       client.update_status(buf, string.format(
@@ -188,6 +198,7 @@ function M.send_message()
         "Error: %s (after %d seconds)",
         response.error, response.elapsed_time
       ))
+      logger.log_error(chat_data, response.error)
     end
 
     -- Prompt for next message
