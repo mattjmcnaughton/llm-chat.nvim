@@ -96,6 +96,78 @@ function M.chat_completion(messages, model, callback)
   end
 end
 
+-- Add a generic HTTP GET function
+function M.make_get_request(endpoint, callback)
+  local start_time = os.time()
+
+  -- Build curl command
+  local cmd = {
+    "curl",
+    "-s",
+    "-X", "GET",
+    "-H", "Content-Type: application/json",
+  }
+
+  -- Add authorization if we have an API key
+  if api.api_key then
+    table.insert(cmd, "-H")
+    table.insert(cmd, "Authorization: Bearer " .. api.api_key)
+  end
+
+  -- Add timeout
+  table.insert(cmd, "--max-time")
+  table.insert(cmd, tostring(api.timeout))
+
+  -- Add URL
+  table.insert(cmd, api.url .. endpoint)
+
+  -- Execute the request
+  local response_text = vim.fn.system(cmd)
+  local end_time = os.time()
+  local elapsed = end_time - start_time
+
+  -- Process response
+  local success, response = pcall(vim.fn.json_decode, response_text)
+
+  if success then
+    callback({
+      success = true,
+      data = response,
+      elapsed_time = elapsed,
+    })
+  else
+    callback({
+      success = false,
+      error = "Failed to parse response: " .. vim.inspect(response_text):sub(1, 100),
+      elapsed_time = elapsed,
+    })
+  end
+end
+
+-- Get available models from LiteLLM
+function M.get_models(callback)
+  M.make_get_request("/v1/models", function(response)
+    if response.success and response.data.data then
+      local models = {}
+      for _, model in ipairs(response.data.data) do
+        table.insert(models, model.id)
+      end
+
+      callback({
+        success = true,
+        models = models,
+        elapsed_time = response.elapsed_time,
+      })
+    else
+      callback({
+        success = false,
+        error = response.error or "Failed to fetch models",
+        elapsed_time = response.elapsed_time,
+      })
+    end
+  end)
+end
+
 -- Helper function to update chat with timing information
 function M.update_status(buf, message)
   local status_line = "Status: " .. message

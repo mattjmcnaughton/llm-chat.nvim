@@ -4,6 +4,8 @@ local M = {}
 -- Load required modules
 local buffer = require('llm_chat.buffer')
 local client = require('llm_chat.client')
+local persona = require('llm_chat.persona')
+local model = require('llm_chat.model')
 
 -- Default configuration
 M.config = {
@@ -15,9 +17,17 @@ M.config = {
     api_key_env = "LITELLM_API_KEY",
   },
 
+  -- Add persona configuration
+  personas = {
+    directory = vim.fn.stdpath('config') .. '/llm-personas',
+    default = "default",
+  },
+
   -- Model configuration
   models = {
-    default = "anthropic-claude-3-7-sonnet", -- Hardcoded for now
+    default = "anthropic-claude-3-7-sonnet", -- Default model
+    cache_ttl = 3600,
+
   },
 
   -- Chat buffer appearance
@@ -45,24 +55,53 @@ function M.setup(opts)
     buffer = M.config.buffer,
     keymaps = M.config.keymaps
   })
+  persona.setup(M.config.personas)
+  model.setup(M.config.models)
+
+    -- Fetch models on startup
+  vim.defer_fn(function()
+    model.fetch_models(function(models, error)
+      if error then
+        vim.notify("Failed to fetch initial models: " .. error, vim.log.levels.WARN)
+      else
+        vim.notify("Fetched " .. #models .. " models from LiteLLM", vim.log.levels.INFO)
+      end
+    end)
+  end, 100) -- Short delay to ensure everything is initialized
 end
 
 -- Create a new chat
-function M.new_chat(model)
-  model = model or M.config.models.default
+function M.new_chat(model_name, persona_name)
+  model_name = model_name or M.config.models.default
+  persona_name = persona_name or nil
 
   -- Create buffer
   local buf = buffer.create_chat_buffer()
 
   -- Initialize with system message
-  -- TODO: Load from persona
+  local system_content = ""
+  if persona_name then
+    system_content = persona.load_persona(persona_name)
+  end
   local system_message = {
     role = "system",
-    content = "You are a helpful assistant."
+    content = system_content
   }
 
   local chat_data = buffer.get_chat_data(buf)
+  chat_data.model = model_name
+  chat_data.persona = persona_name
   table.insert(chat_data.messages, system_message)
+
+  -- Update buffer title to show persona
+  local title = "# llm-chat"
+    if model_name then
+    title = title .. " (Model: " .. model_name .. ")"
+  end
+  if persona_name then
+    title = title .. " (Persona: " .. persona_name .. ")"
+  end
+  vim.api.nvim_buf_set_lines(buf, 0, 1, false, {title})
 
   -- Setup for user input
   buffer.prompt_user(buf)
@@ -73,6 +112,10 @@ end
 -- Alias for backward compatibility
 function M.open_chat(model)
   return M.new_chat(model)
+end
+
+function M.get_personas()
+  return persona.get_all_personas()
 end
 
 -- Send the current message
@@ -150,6 +193,22 @@ function M.send_message()
     -- Prompt for next message
     buffer.prompt_user(buf)
   end)
+end
+
+function M.get_models(callback)
+  model.fetch_models(function(models, error)
+    if error then
+      vim.notify("Failed to fetch models: " .. error, vim.log.levels.WARN)
+    end
+    if callback then
+      callback(models)
+    end
+  end)
+end
+
+-- Expose models cache for tab completion
+function M.get_cached_models()
+  return model.models or {}
 end
 
 return M

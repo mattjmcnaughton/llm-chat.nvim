@@ -50,10 +50,11 @@ function M.create_chat_buffer()
       { noremap = true, silent = true, desc = 'Start new LLM chat' })
   end
 
-  -- Store buffer data
+  -- Store _initial_ buffer values, to be updated later.
   M.active_buffers[buf] = {
     messages = {},
-    model = "anthropic-claude-3-7-sonnet", -- Hardcoded for now
+    model = nil,  -- Will be overwritten
+    persona = nil, -- Will be overwritten
   }
 
   return buf
