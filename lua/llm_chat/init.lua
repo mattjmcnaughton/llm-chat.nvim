@@ -41,7 +41,10 @@ function M.setup(opts)
 
   -- Initialize components
   client.setup(M.config.litellm)
-  buffer.setup(M.config.buffer)
+  buffer.setup({
+    buffer = M.config.buffer,
+    keymaps = M.config.keymaps
+  })
 end
 
 -- Create a new chat
