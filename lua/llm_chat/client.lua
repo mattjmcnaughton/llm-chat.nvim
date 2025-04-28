@@ -33,7 +33,6 @@ function M.chat_completion(messages, model, callback)
   -- Escape the JSON for shell
   local escaped_body = vim.fn.shellescape(body)
 
-  vim.notify("Curl request body: " .. escaped_body, vim.log.levels.INFO)
   -- Build curl command using array (to avoid shell interpretation)
   local cmd = {
     "curl",
@@ -58,7 +57,7 @@ function M.chat_completion(messages, model, callback)
   table.insert(cmd, "-d")
   table.insert(cmd, escaped_body)
 
-  vim.notify("Issuing cmd: " .. cmd, vim.log.levels.INFO)
+  vim.notify("Issuing cmd: " .. vim.fn.json_encode(cmd), vim.log.levels.INFO)
 
   -- TODO: Use vim.loop.spawn for non-blocking requests
   -- For now, we'll use system which will block

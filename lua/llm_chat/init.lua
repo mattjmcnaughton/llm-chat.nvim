@@ -107,7 +107,8 @@ function M.send_message()
   local timer = vim.loop.new_timer()
 
   if timer then
-    timer:start(1000, 1000, vim.schedule_wrap(function()
+    -- Check every 5 seconds
+    timer:start(1000, 5000, vim.schedule_wrap(function()
       local elapsed = os.time() - start_time
       local remaining = M.config.litellm.timeout - elapsed
 
