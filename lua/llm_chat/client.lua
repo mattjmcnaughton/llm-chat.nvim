@@ -33,6 +33,7 @@ function M.chat_completion(messages, model, callback)
   -- Escape the JSON for shell
   local escaped_body = vim.fn.shellescape(body)
 
+  vim.notify("Curl request body: " .. escaped_body, vim.log.levels.INFO)
   -- Build curl command using array (to avoid shell interpretation)
   local cmd = {
     "curl",
