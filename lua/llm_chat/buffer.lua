@@ -20,8 +20,8 @@ function M.create_chat_buffer()
   vim.api.nvim_buf_set_option(buf, 'swapfile', false)
   vim.api.nvim_buf_set_option(buf, 'filetype', M.buffer_config.filetype)
 
-  -- Open the buffer in a new window
-  vim.api.nvim_command('vsplit')
+  -- Open the buffer in a new window (to the right)
+  vim.api.nvim_command('rightbelow vsplit')
   local win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_buf(win, buf)
 

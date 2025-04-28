@@ -107,14 +107,14 @@ function M.send_message()
   local timer = vim.loop.new_timer()
 
   if timer then
-    -- Check every 5 seconds
-    timer:start(1000, 5000, vim.schedule_wrap(function()
+    -- Start checking after 10 seconds, then update every 5 seconds
+    timer:start(10000, 5000, vim.schedule_wrap(function()
       local elapsed = os.time() - start_time
       local remaining = M.config.litellm.timeout - elapsed
 
       if remaining >= 0 then
         client.update_status(buf, string.format(
-          "Waiting for response... (%ds elapsed, %ds until timeout)",
+          "Waiting... (%ds elapsed, %ds until timeout)",
           elapsed, remaining
         ))
       end
