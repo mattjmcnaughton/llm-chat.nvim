@@ -144,12 +144,12 @@ function M.send_message()
     return
   end
 
+  -- Clear input area
+  buffer.clear_input(buf)
+
   -- Add to buffer display
   buffer.add_user_message(buf, message)
   logger.log_user_message(chat_data, message)
-
-  -- Clear input area
-  buffer.clear_input(buf)
 
   -- Update status line
   client.update_status("Waiting for response... (0s elapsed)")
