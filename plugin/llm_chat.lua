@@ -3,12 +3,16 @@ if vim.fn.has('nvim-0.11.0') == 0 then
   return
 end
 
--- Helper function for auto-complete
+-- Helper function for command completion
 local function complete_model_persona(ArgLead, CmdLine, CursorPos)
+  -- Parse the command line to determine where we are
   local args = vim.split(CmdLine, '%s+', { trimempty = true })
+  local cmd = args[1] -- The command itself
+  table.remove(args, 1) -- Remove command, leaving only arguments
 
-  -- First argument (after command) should be model
-  if #args == 2 then  -- Command + first arg (model)
+  -- Now args contains only the arguments, not the command
+  -- If we have 0 args or we're typing the first arg, suggest models
+  if #args == 0 or (#args == 1 and CmdLine:sub(-1) ~= ' ') then
     local models = require('llm_chat').get_cached_models()
 
     if ArgLead ~= '' then
@@ -21,8 +25,8 @@ local function complete_model_persona(ArgLead, CmdLine, CursorPos)
       return matches
     end
     return models
-  -- Second argument (after command and model) should be persona
-  elseif #args >= 3 then  -- Command + model + persona
+  -- If we have 1 complete arg and space, or we're typing the second arg, suggest personas
+  elseif #args == 1 or (#args == 2 and CmdLine:sub(-1) ~= ' ') then
     local personas = require('llm_chat').get_personas()
     if ArgLead ~= '' then
       local matches = {}
@@ -36,8 +40,8 @@ local function complete_model_persona(ArgLead, CmdLine, CursorPos)
     return personas
   end
 
-  -- Default to model list if we're just starting
-  return require('llm_chat').get_cached_models()
+  -- Default to empty list for any other case
+  return {}
 end
 
 -- Helper function to parse command arguments
