@@ -2,9 +2,6 @@
 local M = {}
 
 local api = {}
-local http = require("socket.http")
-local ltn12 = require("ltn12")
-local json = require("cjson")
 
 -- Initialize client with configuration
 function M.setup(config)
@@ -23,51 +20,53 @@ function M.setup(config)
   end
 end
 
--- Send a request to LiteLLM
+-- Send a request to LiteLLM using curl
 function M.chat_completion(messages, model, callback)
   local start_time = os.time()
-  local timeout_time = start_time + api.timeout
 
   -- Create request body
-  local body = json.encode({
+  local body = vim.fn.json_encode({
     model = model,
     messages = messages,
   })
 
-  -- Set up headers
-  local headers = {
-    ["Content-Type"] = "application/json",
-    ["Content-Length"] = #body,
+  -- Escape the JSON for shell
+  local escaped_body = vim.fn.shellescape(body)
+
+  -- Build curl command using array (to avoid shell interpretation)
+  local cmd = {
+    "curl",
+    "-s",
+    "-X", "POST",
+    "-H", "Content-Type: application/json",
   }
 
+  -- Add authorization if we have an API key
   if api.api_key then
-    headers["Authorization"] = "Bearer " .. api.api_key
+    table.insert(cmd, "-H")
+    table.insert(cmd, "Authorization: Bearer " .. api.api_key)
   end
 
-  -- Create response table
-  local response_body = {}
+  -- Add timeout
+  table.insert(cmd, "--max-time")
+  table.insert(cmd, tostring(api.timeout))
 
-  -- TODO: Implement proper async HTTP request
-  -- Currently using synchronous request which will block Neovim
+  -- Add URL and data
+  table.insert(cmd, api.url .. "/chat/completions")
+  table.insert(cmd, "-d")
+  table.insert(cmd, escaped_body)
 
-  -- Set up request
-  local _, code = http.request {
-    url = api.url .. "/chat/completions",
-    method = "POST",
-    headers = headers,
-    source = ltn12.source.string(body),
-    sink = ltn12.sink.table(response_body),
-    timeout = api.timeout,
-  }
+  -- TODO: Use vim.loop.spawn for non-blocking requests
+  -- For now, we'll use system which will block
 
+  local response_text = vim.fn.system(cmd)
   local end_time = os.time()
   local elapsed = end_time - start_time
 
   -- Process response
-  if code == 200 then
-    local response_text = table.concat(response_body)
-    local response = json.decode(response_text)
+  local success, response = pcall(vim.fn.json_decode, response_text)
 
+  if success and response.choices and response.choices[1] and response.choices[1].message then
     callback({
       success = true,
       content = response.choices[1].message.content,
@@ -76,7 +75,7 @@ function M.chat_completion(messages, model, callback)
   else
     callback({
       success = false,
-      error = "Request failed with code: " .. (code or "unknown"),
+      error = "Failed to parse response: " .. vim.inspect(response_text):sub(1, 100),
       elapsed_time = elapsed,
     })
   end
