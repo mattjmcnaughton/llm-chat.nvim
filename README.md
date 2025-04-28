@@ -68,8 +68,8 @@ require('llm_chat').setup({
   -- Chat buffer appearance
   buffer = {
     filetype = "markdown", -- Use markdown for syntax highlighting
-    user_prefix = "🧑 User: ", -- Prefix for user messages
-    assistant_prefix = "🤖 Assistant: ", -- Prefix for assistant responses
+    user_prefix = "User: ", -- Prefix for user messages
+    assistant_prefix = "Assistant: ", -- Prefix for assistant responses
   },
 
   -- Keymaps for chat buffer (nil means no mapping)
@@ -170,7 +170,3 @@ popular frameworks, and best practices. When responding to code questions:
 ## License
 
 MIT
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
