@@ -98,6 +98,7 @@ function M.new_chat(model_name, persona_name)
   local chat_data = buffer.get_chat_data(buf)
   chat_data.model = model_name
   chat_data.persona = persona_name
+  chat_data.id = logger.generate_id(model_name, persona_name)
   table.insert(chat_data.messages, system_message)
 
   logger.log_new_chat(chat_data)

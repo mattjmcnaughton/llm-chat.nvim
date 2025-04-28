@@ -17,9 +17,25 @@ function M.setup(config)
   end
 end
 
--- Generate a unique conversation ID
-function M.generate_id()
-  return string.format("%x", os.time()) .. '-' .. string.format("%x", math.random(0, 0xffff))
+-- Generate a unique convo id
+function M.generate_id(model_name, persona_name)
+  local timestamp = string.format("%x", os.time())
+  local random = string.format("%x", math.random(0, 0xffff))
+
+  -- Create a clean model identifier
+  local model_id = "default"
+  if model_name and model_name ~= "" then
+    -- Convert model name to something safe for filenames
+    model_id = model_name:gsub("[^%w%-]", "_"):sub(1, 20)
+  end
+
+  -- Create a clean persona identifier if available
+  local persona_id = ""
+  if persona_name and persona_name ~= "" then
+    persona_id = "-" .. persona_name:gsub("[^%w%-]", "_"):sub(1, 15)
+  end
+
+  return timestamp .. "-" .. model_id .. "-" .. persona_id .. "-" .. random
 end
 
 -- Get path for a chat log file
