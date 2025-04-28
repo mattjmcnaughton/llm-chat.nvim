@@ -63,6 +63,7 @@ function M.setup(opts)
   })
   persona.setup(M.config.personas)
   model.setup(M.config.models)
+  logger.setup(M.config.logger)
 
     -- Fetch models on startup
   vim.defer_fn(function()

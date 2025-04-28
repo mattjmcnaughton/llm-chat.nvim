@@ -30,6 +30,7 @@ end
 -- Append a log entry to the file
 function M.append_log_entry(chat_id, entry_type, data)
   if not M.enabled then
+    vim.notify("Logging is disabled", vim.log.levels.DEBUG)
     return
   end
 
