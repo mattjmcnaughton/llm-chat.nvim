@@ -10,7 +10,7 @@ function M.setup(config)
 end
 
 -- Create a new chat buffer
-function M.create_chat_buffer()
+function M.create_chat_buffer(model_name, persona_name, buf_id)
   -- Create a new buffer
   local buf = vim.api.nvim_create_buf(false, true)
 
@@ -53,8 +53,9 @@ function M.create_chat_buffer()
   -- Store _initial_ buffer values, to be updated later.
   M.active_buffers[buf] = {
     messages = {},
-    model = nil,  -- Will be overwritten
-    persona = nil, -- Will be overwritten
+    model = model_name,
+    persona = persona_name,
+    id = buf_id,
   }
 
   return buf

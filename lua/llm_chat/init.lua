@@ -80,10 +80,11 @@ end
 -- Create a new chat
 function M.new_chat(model_name, persona_name)
   model_name = model_name or M.config.models.default
-  persona_name = persona_name or nil
+  persona_name = persona_name or M.config.personas.default
+  local buf_id = logger.generate_id(model_name, persona_name)
 
   -- Create buffer
-  local buf = buffer.create_chat_buffer()
+  local buf = buffer.create_chat_buffer(model_name, persona_name, buf_id)
 
   -- Initialize with system message
   local system_content = ""
@@ -96,9 +97,6 @@ function M.new_chat(model_name, persona_name)
   }
 
   local chat_data = buffer.get_chat_data(buf)
-  chat_data.model = model_name
-  chat_data.persona = persona_name
-  chat_data.id = logger.generate_id(model_name, persona_name)
   table.insert(chat_data.messages, system_message)
 
   logger.log_new_chat(chat_data)
