@@ -1,0 +1,15 @@
+# Compiled Lua sources
+luac.out
+
+# luarocks build files
+*.src.rock
+*.zip
+*.tar.gz
+
+# Neovim plugin specific
+.DS_Store
+.cache/
+doc/tags
+lua/llm_chat/generated/
+*.log
+*.json

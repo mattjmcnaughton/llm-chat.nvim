@@ -1,0 +1,13 @@
+---
+services:
+  code-workspace:
+    image: docker.io/mattjmcnaughton/code-workspace:0.0.1-rc1
+    stdin_open: true
+    tty: true
+    user: "1000:1000"
+    hostname: code-worksapce
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    cap_drop:
+      - ALL

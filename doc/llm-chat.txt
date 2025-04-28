@@ -1,0 +1,188 @@
+*llm-chat.txt*    Simple Neovim plugin for LLM interaction via LiteLLM
+
+                            LLM CHAT PLUGIN
+
+Author:  mattjmcnaughton <https://github.com/mattjmcnaughton>
+License: MIT
+
+==============================================================================
+CONTENTS                                                   *llm-chat-contents*
+
+    1. Introduction ........................... |llm-chat-introduction|
+    2. Requirements ........................... |llm-chat-requirements|
+    3. Installation ........................... |llm-chat-installation|
+    4. Configuration .......................... |llm-chat-configuration|
+    5. Commands ............................... |llm-chat-commands|
+    6. API Key Setup .......................... |llm-chat-api-key|
+    7. Personas ............................... |llm-chat-personas|
+    8. Chat Buffer Usage ...................... |llm-chat-buffer-usage|
+    9. Customization .......................... |llm-chat-customization|
+    10. Troubleshooting ....................... |llm-chat-troubleshooting|
+
+==============================================================================
+1. Introduction                                        *llm-chat-introduction*
+
+llm-chat.nvim is a simple Neovim plugin for interacting with Large Language
+Models (LLMs) via LiteLLM. It provides a chat interface that allows you to have
+conversations with LLMs directly from within Neovim.
+
+==============================================================================
+2. Requirements                                        *llm-chat-requirements*
+
+- Neovim 0.11.0+
+- LiteLLM server running locally or remotely
+- API key for LiteLLM
+
+==============================================================================
+3. Installation                                        *llm-chat-installation*
+
+Using lazy.nvim: >
+
+    {
+      'mattjmcnaughton/llm-chat.nvim',
+      config = function()
+        require('llm_chat').setup({
+          -- Your configuration here (optional)
+        })
+      end
+    }
+
+
+==============================================================================
+4. Configuration                                      *llm-chat-configuration*
+
+Basic configuration: >
+
+    require('llm_chat').setup({
+      -- Connection settings for LiteLLM
+      litellm = {
+        url = "http://localhost:8000", -- URL for your LiteLLM server
+        timeout = 30, -- Request timeout in seconds
+        api_key = nil, -- API key (direct setting, not recommended)
+        api_key_env = "LITELLM_API_KEY", -- Environment variable for API key
+      },
+
+      -- Logging configuration
+      logger = {
+        enabled = true, -- Enable logging
+        path = vim.fn.stdpath('data') .. '/llm_chat_logs.json',
+      },
+
+      -- Persona configuration
+      personas = {
+        directory = vim.fn.stdpath('config') .. '/llm-personas',
+        default = "general", -- Default persona to use
+      },
+
+      -- Model configuration
+      models = {
+        default = "gpt-4", -- Fallback model if discovery fails
+        cache_ttl = 3600, -- How long to cache model list (in seconds)
+      },
+
+      -- Chat buffer appearance
+      buffer = {
+        filetype = "markdown", -- Use markdown for syntax highlighting
+        user_prefix = "🧑 User: ", -- Prefix for user messages
+        assistant_prefix = "🤖 Assistant: ", -- Prefix for assistant responses
+      },
+
+      -- Keymaps for chat buffer (nil means no mapping)
+      keymaps = {
+        send = "<C-s>", -- Ctrl+s to send message
+        new_chat = "<C-n>", -- Ctrl+n to start new chat
+      }
+    })
+
+
+==============================================================================
+5. Commands                                              *llm-chat-commands*
+
+- `:LlmChat` - Start a chat with default model and persona (alias for `:LlmChatNew`)
+- `:LlmChatNew` - Start a new chat with specified model and persona
+- `:LlmChatNew gpt-4` - Start a chat with a specific model
+- `:LlmChatNew gpt-4 python-expert` - Start with specific model and persona
+- `:LlmChatGetPersonas` - List available personas
+- `:LlmChatGetModels` - List available models via LiteLLM
+
+==============================================================================
+6. API Key Setup                                        *llm-chat-api-key*
+
+The plugin requires an API key to authenticate with LiteLLM. You have two
+options:
+
+1. Environment Variable (Recommended):
+   Set the `LITELLM_API_KEY` environment variable before starting Neovim: >
+
+   export LITELLM_API_KEY="your-api-key-here"
+
+
+2. Direct Configuration (Less Secure):
+   Set the API key directly in your config: >
+
+   require('llm_chat').setup({
+     litellm = {
+       api_key = "your-api-key-here",
+       -- Other settings...
+     },
+   })
+
+
+==============================================================================
+7. Personas                                              *llm-chat-personas*
+
+Personas are directories containing text files that define instructions for
+the LLM. Create a directory structure like: >
+
+    ~/.config/nvim/llm-personas/
+    ├── general/
+    │   └── 01-helpful-assistant.txt
+    ├── python-expert/
+    │   ├── 01-python-knowledge.txt
+    │   └── 02-coding-style.txt
+    └── creative-writer/
+        └── 01-storytelling.txt
+
+
+Files within each persona directory are concatenated in alphabetical order
+to form the system instructions for the LLM.
+
+==============================================================================
+8. Chat Buffer Usage                                  *llm-chat-buffer-usage*
+
+After starting a chat with one of the commands, you can:
+
+- Type your message
+- Press `Ctrl+s` (or your configured keybinding) to send
+- Press `Ctrl+n` (or your configured keybinding) to start a new chat
+
+==============================================================================
+9. Customization                                      *llm-chat-customization*
+
+You can add keymappings for quick access: >
+
+    vim.api.nvim_set_keymap('n', '<leader>lc', ':LlmChat<CR>',
+      { noremap = true, desc = 'Open LLM Chat' })
+
+    vim.api.nvim_set_keymap('n', '<leader>lp', ':LlmChat gpt-4 python-expert<CR>',
+      { noremap = true, desc = 'Open Python expert chat' })
+
+
+==============================================================================
+10. Troubleshooting                                *llm-chat-troubleshooting*
+
+Common issues:
+
+- API key not found: Ensure your API key is correctly set either in the
+  configuration or as an environment variable.
+
+- Connection failed: Check that your LiteLLM server is running and accessible
+  at the configured URL.
+
+- Model not found: Verify that the requested model is available in your
+  LiteLLM instance.
+
+For more help, visit: https://github.com/mattjmcnaughton/llm-chat.nvim/issues
+
+==============================================================================
+ vim:tw=78:ts=8:ft=help:norl:
