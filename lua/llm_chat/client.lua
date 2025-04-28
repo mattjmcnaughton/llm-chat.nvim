@@ -40,6 +40,7 @@ function M.chat_completion(messages, model, callback)
     "-s",
     "-X", "POST",
     "-H", "Content-Type: application/json",
+    "-H", "accept: application/json",
   }
 
   -- Add authorization if we have an API key
@@ -53,9 +54,11 @@ function M.chat_completion(messages, model, callback)
   table.insert(cmd, tostring(api.timeout))
 
   -- Add URL and data
-  table.insert(cmd, api.url .. "/chat/completions")
+  table.insert(cmd, api.url .. "v1/chat/completions")
   table.insert(cmd, "-d")
   table.insert(cmd, escaped_body)
+
+  vim.notify("Issuing cmd: " .. cmd, vim.log.levels.INFO)
 
   -- TODO: Use vim.loop.spawn for non-blocking requests
   -- For now, we'll use system which will block
