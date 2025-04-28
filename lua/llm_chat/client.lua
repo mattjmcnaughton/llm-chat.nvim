@@ -53,7 +53,7 @@ function M.chat_completion(messages, model, callback)
   table.insert(cmd, tostring(api.timeout))
 
   -- Add URL and data
-  table.insert(cmd, api.url .. "v1/chat/completions")
+  table.insert(cmd, api.url .. "/v1/chat/completions")
   table.insert(cmd, "-d")
   table.insert(cmd, escaped_body)
 
