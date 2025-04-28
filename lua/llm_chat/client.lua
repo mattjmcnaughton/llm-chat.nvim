@@ -20,7 +20,7 @@ function M.setup(config)
   end
 end
 
--- Send a request to LiteLLM using curl
+-- Send a message to LiteLLM via curl -- write JSON body to temp file
 function M.chat_completion(messages, model, callback)
   local start_time = os.time()
 
@@ -30,16 +30,29 @@ function M.chat_completion(messages, model, callback)
     messages = messages,
   })
 
-  -- Escape the JSON for shell
-  local escaped_body = vim.fn.shellescape(body)
+  -- Create a temporary file
+  local temp_file = os.tmpname()
 
-  -- Build curl command using array (to avoid shell interpretation)
+  -- Write JSON to the temporary file
+  local file = io.open(temp_file, "w")
+  if not file then
+    callback({
+      success = false,
+      error = "Failed to create temporary file",
+      elapsed_time = 0,
+    })
+    return
+  end
+
+  file:write(body)
+  file:close()
+
+  -- Build curl command with @file syntax
   local cmd = {
     "curl",
     "-s",
     "-X", "POST",
     "-H", "Content-Type: application/json",
-    "-H", "accept: application/json",
   }
 
   -- Add authorization if we have an API key
@@ -52,19 +65,18 @@ function M.chat_completion(messages, model, callback)
   table.insert(cmd, "--max-time")
   table.insert(cmd, tostring(api.timeout))
 
-  -- Add URL and data
+  -- Add URL and data from file
   table.insert(cmd, api.url .. "/v1/chat/completions")
   table.insert(cmd, "-d")
-  table.insert(cmd, escaped_body)
+  table.insert(cmd, "@" .. temp_file)
 
-  vim.notify("Issuing cmd: " .. vim.fn.json_encode(cmd), vim.log.levels.INFO)
-
-  -- TODO: Use vim.loop.spawn for non-blocking requests
-  -- For now, we'll use system which will block
-
+  -- Execute the request
   local response_text = vim.fn.system(cmd)
   local end_time = os.time()
   local elapsed = end_time - start_time
+
+  -- Clean up the temporary file
+  os.remove(temp_file)
 
   -- Process response
   local success, response = pcall(vim.fn.json_decode, response_text)
